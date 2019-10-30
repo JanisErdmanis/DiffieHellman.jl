@@ -1,0 +1,8 @@
+name = "DiffieHellman"
+uuid = "0e61fee8-20a4-4374-8233-5198f28d9d66"
+authors = ["akels <akels14@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+Mods = "7475f97c-0381-53b1-977b-4c60186c8d62"
+Paillier = "84e01822-a062-59e4-8289-aa032edeecdd"

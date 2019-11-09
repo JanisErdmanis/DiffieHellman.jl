@@ -1,66 +1,76 @@
 module DiffieHellman
 
-using Signatures
-using Mods
+using Random
+using Serialization
 
-using Paillier
+using CryptoGroups
+#using CryptoSignatures
 
-rngprime(N) = Paillier.nbit_prime_of_size(N)
-rngint(N) = Paillier.n_bit_random_number(N)
+const _default_rng = Ref{RandomDevice}()
+function __init__()
+    _default_rng[] = RandomDevice()
+end
 
-### Stuff to be implemented
-# https://math.stackexchange.com/questions/124408/finding-a-primitive-root-of-a-prime-number
-getprimitiveroot(p) = 51
+default_rng() = _default_rng[]
 
-const N = 10
+function rngint(rng::AbstractRNG, len::Integer)
+    max_n = ( BigInt(1) << len ) - 1
+    if len > 2
+        min_n = BigInt(1) << (len - 1)
+        return rand(rng, min_n:max_n)
+    end
+    return rand(rng, 1:max_n)
+end
 
 # Probably before user descides to contact the server he asks for the certificate of the public key and checks if that is valid. 
-function diffie(io,istrusted::Function,sign::Function)
-    s = Serializer(io)
-    Serialization.writeheader(s)
-
-    p = rngprime(N)
-    g = getprimitiveroot(p)
-    
-    G = Mod(g,p)
+function diffie(s,sign::Function,verify::Function,G::AbstractGroup,rng::AbstractRNG)
     serialize(s,G)
 
     B,Bsign = deserialize(s)
-    if verify(B,Bsign) && istrusted(id(Bsign))
 
-        a = rngint(N-1)
-        A = G^a
+    if verify(B,Bsign)
+
+        t = security(G)
+        a = rngint(rng,t)
+        A = binary(G^a)
+
         serialize(s,(A,sign(A)))
-
-        key = mod(B^a,p)
+        
+        Bb = typeof(G)(B,G)
+        key = value(Bb^a)
         return key
     else
         return Error("Key exchange failed.")
     end
 end
 
-"""
-This one returns a secret connection between two fixed parties.
-"""
-function hellman(io,istrusted::Function,sign::Function)
-    s = Serializer(io)
-    s = Serialization.writeheader(s)
+diffie(io,sign::Function,verify::Function,G::AbstractGroup) = diffie(io,sign,verify,G,default_rng())
 
+"""
+This one returns a secret connection between two fixed parties. The signature function sign returns signature and the group with respect to which the signature was signed.
+"""
+function hellman(s,sign::Function,verify::Function,rng::AbstractRNG)
     G = deserialize(s)
-
-    b = rngint(N-1) # A random int here
     
-    B = G^b
+    t = security(G)
+    b = rngint(rng,t) 
+    
+    B = binary(G^b)
     serialize(s,(B,sign(B)))
-
+    
     A,Asign = deserialize(s)
 
-    if verify(A,Asign) && istrusted(id(Asign))
-        key = mod(A^b,p)
+    if verify(A,Asign)
+        Aa = typeof(G)(A,G)
+        key = value(Aa^b)
         return key
     else
         return Error("Key exchange failed.")
     end
 end
+
+hellman(io,sign::Function,verify::Function) = hellman(io,sign,verify,default_rng())
+
+export diffie, hellman
 
 end # module

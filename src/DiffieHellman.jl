@@ -23,7 +23,7 @@ end
 
 # Probably before user descides to contact the server he asks for the certificate of the public key and checks if that is valid. 
 function diffie(s,sign::Function,verify::Function,G::AbstractGroup,rng::AbstractRNG)
-p    serialize(s,G)
+    serialize(s,G)
 
     B,Bsign = deserialize(s)
 

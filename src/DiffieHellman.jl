@@ -4,7 +4,6 @@ using Random
 using Serialization
 
 using CryptoGroups
-#using CryptoSignatures
 
 const _default_rng = Ref{RandomDevice}()
 function __init__()
@@ -24,7 +23,7 @@ end
 
 # Probably before user descides to contact the server he asks for the certificate of the public key and checks if that is valid. 
 function diffie(s,sign::Function,verify::Function,G::AbstractGroup,rng::AbstractRNG)
-    serialize(s,G)
+p    serialize(s,G)
 
     B,Bsign = deserialize(s)
 

@@ -1,7 +1,8 @@
 module DiffieHellman
 
 using Random
-using Serialization
+#using Serialization
+using SecureIO
 
 using CryptoGroups
 
@@ -23,9 +24,12 @@ end
 
 # Probably before user descides to contact the server he asks for the certificate of the public key and checks if that is valid. 
 function diffie(s,sign::Function,verify::Function,G::AbstractGroup,rng::AbstractRNG)
+    #@show "Diffie", typeof(s), hasmethod(serialize,(typeof(s),Any))
     serialize(s,G)
-
+    
     B,Bsign = deserialize(s)
+
+    #@show verify(B,Bsign)
 
     if verify(B,Bsign)
 
@@ -49,8 +53,9 @@ diffie(io,sign::Function,verify::Function,G::AbstractGroup) = diffie(io,sign,ver
 This one returns a secret connection between two fixed parties. The signature function sign returns signature and the group with respect to which the signature was signed.
 """
 function hellman(s,sign::Function,verify::Function,rng::AbstractRNG)
+    #@show "Hellman"
     G = deserialize(s)
-    
+
     t = security(G)
     b = rngint(rng,t) 
     

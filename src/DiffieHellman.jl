@@ -2,7 +2,10 @@ module DiffieHellman
 
 using Random
 #using Serialization
-using SecureIO
+#using SecureIO
+
+# serialize(s::IO,msg) = error("serialize must be implemented by $(typeof(s)).")
+# deserialize(s::IO) = error("deserialize must be implemented by $(typeof(s)).")
 
 using CryptoGroups
 
@@ -23,7 +26,7 @@ function rngint(rng::AbstractRNG, len::Integer)
 end
 
 # Probably before user descides to contact the server he asks for the certificate of the public key and checks if that is valid. 
-function diffie(s,sign::Function,verify::Function,G::AbstractGroup,rng::AbstractRNG)
+function diffie(s,serialize::Function,deserialize::Function,sign::Function,verify::Function,G::AbstractGroup,rng::AbstractRNG)
     #@show "Diffie", typeof(s), hasmethod(serialize,(typeof(s),Any))
     serialize(s,G)
     
@@ -47,12 +50,12 @@ function diffie(s,sign::Function,verify::Function,G::AbstractGroup,rng::Abstract
     end
 end
 
-diffie(io,sign::Function,verify::Function,G::AbstractGroup) = diffie(io,sign,verify,G,default_rng())
+diffie(io,serialize::Function,deserialize::Function,sign::Function,verify::Function,G::AbstractGroup) = diffie(io,serialize,deserialize,sign,verify,G,default_rng())
 
 """
 This one returns a secret connection between two fixed parties. The signature function sign returns signature and the group with respect to which the signature was signed.
 """
-function hellman(s,sign::Function,verify::Function,rng::AbstractRNG)
+function hellman(s,serialize::Function,deserialize::Function,sign::Function,verify::Function,rng::AbstractRNG)
     #@show "Hellman"
     G = deserialize(s)
 
@@ -73,8 +76,10 @@ function hellman(s,sign::Function,verify::Function,rng::AbstractRNG)
     end
 end
 
-hellman(io,sign::Function,verify::Function) = hellman(io,sign,verify,default_rng())
+hellman(io,serialize::Function,deserialize::Function,sign::Function,verify::Function) = hellman(io,serialize,deserialize,sign,verify,default_rng())
 
 export diffie, hellman
+
+#export serialize, deserialize
 
 end # module

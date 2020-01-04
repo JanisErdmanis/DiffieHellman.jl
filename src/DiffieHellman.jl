@@ -1,71 +1,53 @@
 module DiffieHellman
 
-using Random
 using CryptoGroups
 
-const _default_rng = Ref{RandomDevice}()
-function __init__()
-    _default_rng[] = RandomDevice()
-end
+function diffie(send::Function,get::Function,wrap::Function,unwrap::Function,G::AbstractGroup,hash::Function,a::Integer)
+    envelopeB = get()
+    Bvalue = unwrap(envelopeB)
 
-default_rng() = _default_rng[]
+    Avalue = value(G^a)
 
-function rngint(rng::AbstractRNG, len::Integer)
-    max_n = ( BigInt(1) << len ) - 1
-    if len > 2
-        min_n = BigInt(1) << (len - 1)
-        return rand(rng, min_n:max_n)
-    end
-    return rand(rng, 1:max_n)
-end
-
-function diffie(s,serialize::Function,deserialize::Function,sign::Function,verify::Function,G::AbstractGroup,rng::AbstractRNG)
-    serialize(s,G)
+    envelopeA = wrap(Avalue)
+    send(envelopeA)
     
-    B,Bsign = deserialize(s)
+    B = typeof(G)(Bvalue,G)
+    @assert B!=G "Trivial group elements are not allowed."
+    key = value(B^a)
+    
 
-    if verify(B,Bsign)
+    cmsgA = hash(envelopeA,envelopeB,key)
+    send(cmsgA)
 
-        t = security(G)
-        a = rngint(rng,t)
-        A = binary(G^a)
+    cmsgB = get()
+    @assert cmsgB==hash(envelopeB,envelopeA,key) "The key exchange failed."
 
-        serialize(s,(A,sign(A)))
-        
-        Bb = typeof(G)(B,G)
-        key = value(Bb^a)
-        return key
-    else
-        return Error("Key exchange failed.")
-    end
+    return key
 end
-
-diffie(io,serialize::Function,deserialize::Function,sign::Function,verify::Function,G::AbstractGroup) = diffie(io,serialize,deserialize,sign,verify,G,default_rng())
 
 """
 This one returns a secret connection between two fixed parties. The signature function sign returns signature and the group with respect to which the signature was signed.
 """
-function hellman(s,serialize::Function,deserialize::Function,sign::Function,verify::Function,rng::AbstractRNG)
-    G = deserialize(s)
+function hellman(send::Function,get::Function,wrap::Function,unwrap::Function,G::AbstractGroup,hash::Function,b::Integer)
+    Bvalue = value(G^b)
+    envelopeB = wrap(Bvalue)
+    send(envelopeB)
 
-    t = security(G)
-    b = rngint(rng,t) 
-    
-    B = binary(G^b)
-    serialize(s,(B,sign(B)))
-    
-    A,Asign = deserialize(s)
+    envelopeA = get()
+    Avalue = unwrap(envelopeA)
 
-    if verify(A,Asign)
-        Aa = typeof(G)(A,G)
-        key = value(Aa^b)
-        return key
-    else
-        return Error("Key exchange failed.")
-    end
+    A = typeof(G)(Avalue,G)
+    @assert A!=G "Trivial group elements are not allowed."
+    key = value(A^b)
+    
+    cmsgB = hash(envelopeB,envelopeA,key)
+    send(cmsgB)
+
+    cmsgA = get()
+    @assert cmsgA==hash(envelopeA,envelopeB,key) "The key exchange failed."
+    
+    return key
 end
-
-hellman(io,serialize::Function,deserialize::Function,sign::Function,verify::Function) = hellman(io,serialize,deserialize,sign,verify,default_rng())
 
 export diffie, hellman
 

@@ -52,10 +52,10 @@ end
 end
 
 ### Let's say that we want slave to connect only to a true master. Thus he owns a certificate and from master had obtained a valid master id.
-@async global keyserver = diffie(x->serialize(serversocket,x),()->deserialize(serversocket),wrap(serversign),unwrap(verifysignature,id->true),G,chash,rngint(100))
-keyslave = hellman(x->serialize(slavesocket,x),()->deserialize(slavesocket),wrap(slavesign),unwrap(verifysignature,id->id==serverid),G,chash,rngint(100)) # x==serverid
+keyserver = @async diffiehellman(x->serialize(serversocket,x),()->deserialize(serversocket),wrap(serversign),unwrap(verifysignature,id->true),G,chash,rngint(100))
+keyslave = @async diffiehellman(x->serialize(slavesocket,x),()->deserialize(slavesocket),wrap(slavesign),unwrap(verifysignature,id->id==serverid),G,chash,rngint(100)) # x==serverid
 
-@test keyslave==keyserver
+@test fetch(keyslave)==fetch(keyserver)
 
 
 

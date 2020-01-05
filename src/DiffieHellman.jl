@@ -2,20 +2,26 @@ module DiffieHellman
 
 using CryptoGroups
 
-function diffie(send::Function,get::Function,wrap::Function,unwrap::Function,G::AbstractGroup,hash::Function,a::Integer)
-    envelopeB = get()
-    Bvalue = unwrap(envelopeB)
+struct DH
+    wrap::Function
+    unwrap::Function
+    G::AbstractGroup
+    hash::Function
+    rngint::Function
+end
 
+function diffiehellman(send::Function,get::Function,wrap::Function,unwrap::Function,G::AbstractGroup,hash::Function,a::Integer)
     Avalue = value(G^a)
-
     envelopeA = wrap(Avalue)
     send(envelopeA)
+
+    envelopeB = get()
+    Bvalue = unwrap(envelopeB)
     
     B = typeof(G)(Bvalue,G)
     @assert B!=G "Trivial group elements are not allowed."
     key = value(B^a)
     
-
     cmsgA = hash(envelopeA,envelopeB,key)
     send(cmsgA)
 
@@ -25,30 +31,8 @@ function diffie(send::Function,get::Function,wrap::Function,unwrap::Function,G::
     return key
 end
 
-"""
-This one returns a secret connection between two fixed parties. The signature function sign returns signature and the group with respect to which the signature was signed.
-"""
-function hellman(send::Function,get::Function,wrap::Function,unwrap::Function,G::AbstractGroup,hash::Function,b::Integer)
-    Bvalue = value(G^b)
-    envelopeB = wrap(Bvalue)
-    send(envelopeB)
+diffiehellman(send::Function,get::Function,dh::DH) = diffiehellman(send,get,dh.wrap,dh.unwrap,dh.G,dh.hash,dh.rngint())
 
-    envelopeA = get()
-    Avalue = unwrap(envelopeA)
-
-    A = typeof(G)(Avalue,G)
-    @assert A!=G "Trivial group elements are not allowed."
-    key = value(A^b)
-    
-    cmsgB = hash(envelopeB,envelopeA,key)
-    send(cmsgB)
-
-    cmsgA = get()
-    @assert cmsgA==hash(envelopeA,envelopeB,key) "The key exchange failed."
-    
-    return key
-end
-
-export diffie, hellman
+export diffiehellman, DH
 
 end # module

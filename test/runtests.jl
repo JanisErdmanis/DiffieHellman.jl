@@ -18,7 +18,7 @@ end
 
 G = CryptoGroups.MODP160Group()
 
-id(s) = hash(s.pubkey)
+id(s) = hash("$(s.pubkey)")
 chash(envelope1,envelope2,key) = hash("$envelope1 $envelope2 $key")
 
 # master
@@ -31,16 +31,12 @@ slave = Signer(G)
 slavesign(data) = DSASignature(hash(data),slave)
 slaveid = id(slave)
 
-verifysignature(data,signature) = verify(data,signature,G)
-
 wrap(sign::Function) = data->(data,sign(data))
 
-function unwrap(verify::Function,validate::Function)
-    envelope -> begin
-        data, signature = envelope
-        @assert verify(data,signature) && validate(id(signature))
-        return data
-    end
+function unwrap(envelope)
+    data, signature = envelope
+    @assert verify(data,signature,G)
+    return data, id(signature)
 end
 
 ### Let's assume that maintainer had contacted the server
@@ -52,12 +48,15 @@ end
 end
 
 ### Let's say that we want slave to connect only to a true master. Thus he owns a certificate and from master had obtained a valid master id.
-keyserver = @async diffiehellman(x->serialize(serversocket,x),()->deserialize(serversocket),wrap(serversign),unwrap(verifysignature,id->true),G,chash,rngint(100))
-keyslave = @async diffiehellman(x->serialize(slavesocket,x),()->deserialize(slavesocket),wrap(slavesign),unwrap(verifysignature,id->id==serverid),G,chash,rngint(100)) # x==serverid
+keyserver = @async diffiehellman(x->serialize(serversocket,x),()->deserialize(serversocket),wrap(serversign),unwrap,G,chash,rngint(100))
+keyslave = @async diffiehellman(x->serialize(slavesocket,x),()->deserialize(slavesocket),wrap(slavesign),unwrap,G,chash,rngint(100)) # x==serverid
 
-@test fetch(keyslave)==fetch(keyserver)
+keyserv,idserv = fetch(keyserver)
+keyslav,idslav = fetch(keyslave)
 
-
+@test idserv==slaveid
+@test idslav==serverid
+@test keyserv==keyslav
 
 
 

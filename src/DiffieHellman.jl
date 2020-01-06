@@ -4,7 +4,7 @@ using CryptoGroups
 
 struct DH
     wrap::Function
-    unwrap::Function
+    unwrap::Union{Function,Unwrap}
     G::AbstractGroup
     hash::Function
     rngint::Function
@@ -16,7 +16,7 @@ function diffiehellman(send::Function,get::Function,wrap::Function,unwrap::Funct
     send(envelopeA)
 
     envelopeB = get()
-    Bvalue = unwrap(envelopeB)
+    Bvalue,id = unwrap(envelopeB)
     
     B = typeof(G)(Bvalue,G)
     @assert B!=G "Trivial group elements are not allowed."
@@ -28,7 +28,7 @@ function diffiehellman(send::Function,get::Function,wrap::Function,unwrap::Funct
     cmsgB = get()
     @assert cmsgB==hash(envelopeB,envelopeA,key) "The key exchange failed."
 
-    return key
+    return key,id 
 end
 
 diffiehellman(send::Function,get::Function,dh::DH) = diffiehellman(send,get,dh.wrap,dh.unwrap,dh.G,dh.hash,dh.rngint())

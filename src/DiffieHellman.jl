@@ -4,7 +4,7 @@ using CryptoGroups
 
 struct DH
     wrap::Function
-    unwrap::Union{Function,Unwrap}
+    unwrap::Function
     G::AbstractGroup
     hash::Function
     rngint::Function

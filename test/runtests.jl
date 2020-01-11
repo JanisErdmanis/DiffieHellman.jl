@@ -58,6 +58,17 @@ keyslav,idslav = fetch(keyslave)
 @test idslav==serverid
 @test keyserv==keyslav
 
+### Let's now test diffie and hellman methods
+
+keyserver = @async diffie(x->serialize(serversocket,x),()->deserialize(serversocket),wrap(serversign),unwrap,G,chash,rngint(100))
+keyslave = @async hellman(x->serialize(slavesocket,x),()->deserialize(slavesocket),wrap(slavesign),unwrap,G,chash,rngint(100)) # x==serverid
+
+keyserv,idserv = fetch(keyserver)
+keyslav,idslav = fetch(keyslave)
+
+@test idserv==slaveid
+@test idslav==serverid
+@test keyserv==keyslav
 
 
 

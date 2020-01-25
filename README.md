@@ -1,2 +1,2 @@
 # DiffieHellman.jl
-Diffie-Hellman key exchange algorithm
+Diffie-Hellman key exchange algorithm.

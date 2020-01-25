@@ -15,7 +15,7 @@ function diffiehellman(send::Function,get::Function,wrap::Function,unwrap::Funct
     envelopeA = wrap(Avalue)
     send(envelopeA)
 
-    envelopeB = get()
+    @show envelopeB = get()
     Bvalue,id = unwrap(envelopeB)
     
     B = typeof(G)(Bvalue,G)

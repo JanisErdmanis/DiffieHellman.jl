@@ -16,7 +16,8 @@ function rngint(len::Integer)
     return rand(1:max_n)
 end
 
-G = CryptoGroups.MODP160Group()
+G = CryptoGroups.Scep256k1Group()
+#G = CryptoGroups.MODP160Group()
 
 id(s) = hash("$(s.pubkey)")
 chash(envelope1,envelope2,key) = hash("$envelope1 $envelope2 $key")
@@ -35,7 +36,7 @@ wrap(sign::Function) = data->(data,sign(data))
 
 function unwrap(envelope)
     data, signature = envelope
-    @assert verify(data,signature,G)
+    @assert verify(signature,G) && signature.hash==hash(data)
     return data, id(signature)
 end
 

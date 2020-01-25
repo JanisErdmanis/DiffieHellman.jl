@@ -1,7 +1,7 @@
 name = "DiffieHellman"
 uuid = "0e61fee8-20a4-4374-8233-5198f28d9d66"
 authors = ["akels <akels14@gmail.com>"]
-version = "0.3.0"
+version = "0.4.0"
 
 [deps]
 CryptoGroups = "bc997328-bedd-407e-bcd3-5758e064a52d"

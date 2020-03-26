@@ -2,7 +2,6 @@ using Test
 
 using DiffieHellman
 using Sockets
-using Serialization
 using CryptoGroups
 using CryptoSignatures
 using Random
